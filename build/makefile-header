@@ -23,7 +23,7 @@ INCLUDE=-I$(LIBRARIES_DIR)/include
 
 LIBRARYPATH=-L$(LIBRARIES_DIR)/lib 
 ifeq ($(shell uname -s), Linux)
-CXXFLAGS += -Dlinux
+CXXFLAGS += -Dlinux -D__LINUX__
 OPENGL_LIBS=`pkg-config gl --libs` `pkg-config glu --libs` `pkg-config glew --libs` `pkg-config freeglut --libs`
 STANDARD_LIBS= $(OPENGL_LIBS) -lz -lm $(LIBRARYPATH)
 else

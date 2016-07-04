@@ -107,16 +107,8 @@ void Init(int &argc, char *argv[])
   std::cout << "Initializing GLUT..." << std::endl;
 #ifdef __LINUX__
   setenv("MESA_GL_VERSION_OVERRIDE", "3.0", 0);
-
-  GLenum err = glewInit();  
-  // check that the machine supports the 2.1 API.
-  if (err != GLEW_OK || (!GLEW_VERSION_2_1) 
-  {
-    exit(1);
-  }
-
 #endif
-  
+
   glutInit(&argc, argv);
 
   std::cout << "Initializing OpenGL..." << std::endl;
@@ -130,6 +122,16 @@ void Init(int &argc, char *argv[])
   glutInitWindowSize(800, 600);
   glutInitWindowPosition(0, 0);  
   glutCreateWindow("CSCI 420 homework I");
+
+#ifdef __LINUX__
+  GLenum err = glewInit();
+  // check that the machine supports the 2.1 API.
+  if (err != GLEW_OK || (!GLEW_VERSION_2_1))
+  {
+	  std::cerr<< "Erro aqui\n";
+    exit(1);
+  }
+#endif
 
   std::cout << "OpenGL Version: " << glGetString(GL_VERSION) << std::endl;
   std::cout << "OpenGL Renderer: " << glGetString(GL_RENDERER) << std::endl;
