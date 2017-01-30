@@ -40,7 +40,7 @@ void ObjParser::SplitByString(const std::string & input, const std::string & sep
   }
 
   if (removeEmptyComponents)
-    std::remove(stringList.begin(), stringList.end(), "");
+    stringList.erase( std::remove( stringList.begin(), stringList.end(), ""), stringList.end() ); 
 }
 
 void ObjParser::PreprocessLine(const std::string & rawLine, std::string & filteredLine)
@@ -70,7 +70,7 @@ bool ObjParser::ParseAttribute(const std::vector<std::string> & components, Attr
     // Check if the component is a valid number.
     char* p;
     float coord = strtof(components[i].c_str(), &p);
-    if (*p)
+    if (*p || components[i].size() == 0)
     {
       if (verbose)
         std::cerr << "ERROR Could not read numerical data: '" << components[i] << "' " << std::endl;
@@ -101,7 +101,45 @@ bool ObjParser::ParseAttribute(const std::vector<std::string> & components, Attr
 bool ObjParser::ParseFace(const std::vector<std::string> & components, Face & face,
                           bool verbose)
 {
-  // TODO.
+  face.mIndices.clear();
+
+  for (int i = 1; i < components.size(); i++)
+  {
+    // Read the i-th vertex data into components.
+    std::vector<std::string> subcomponents;
+    ObjParser::SplitByString(components[i], "/", subcomponents, false);
+
+    // Check the number of subcomponents.
+    if (subcomponents.size() < 1 || subcomponents.size() > 3)
+    {
+      if (verbose)
+        std::cerr << "ERROR Wrong vertex indices format. " << std::endl;
+      return false;
+    }
+
+    face.mIndices.push_back({-1, -1, -1});
+
+    // Convert subcomponents into indices.
+    for (int j = 0; j < subcomponents.size(); j++)
+    {
+      char* p;
+      int coord = strtol(subcomponents[j].c_str(), &p, 10);
+      if (*p)
+      {
+        if (verbose)
+          std::cerr << "ERROR Could not read index: '" << subcomponents[j] << "' " << std::endl;
+        return false;
+      }
+
+      // Index is being provided.
+      if (subcomponents[j].size() > 0)
+      {
+        face.mIndices[i-1][j] = coord;
+      }
+    }
+  }
+
+  return true;
 }
 
 
