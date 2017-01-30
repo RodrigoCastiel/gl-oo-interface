@@ -35,7 +35,6 @@ public:
   struct Face
   {
     std::vector<std::vector<int>> mIndices;
-    std::vector<int> mVertexFormat;
   };
 
   // Splits the input string into a list of strings according to a separator string.

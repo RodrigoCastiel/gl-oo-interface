@@ -9,6 +9,19 @@
 namespace gloo
 {
 
+void PrintStringList(const std::vector<std::string> & stringList)
+{
+  std::cout << "{";
+  for (size_t i = 0; i < stringList.size(); i++)
+  {
+    std::cout << "\"" << stringList[i] << "\"";
+
+    if (i < stringList.size()-1)
+      std::cout << ", ";
+  }
+  std::cout << "}";
+}
+
 void ObjParser::SplitByString(const std::string & input, const std::string & separator, 
                               std::vector<std::string> & stringList, bool removeEmptyComponents)
 {
@@ -93,3 +106,27 @@ bool ObjParser::ParseFace(const std::vector<std::string> & components, Face & fa
 
 
 }  // namespace gloo.
+
+int main()
+{
+  gloo::ObjParser parser;
+
+  std::string line = "f 0/2/0 3/0/0 5/4/0 ";
+  std::string filtered;
+  std::string separator = " ";
+  std::vector<std::string> list;
+  gloo::ObjParser::Attribute attrib;
+  gloo::ObjParser::Face face;
+
+  parser.PreprocessLine(line, filtered);
+  parser.SplitByString(filtered, separator, list, true);
+
+  // gloo::PrintStringList(list);
+
+  // parser.ParseAttribute(list, attrib, true);
+  parser.ParseFace(list, face, true);
+
+  // PrintStringList(list);
+
+  return 0;
+}
