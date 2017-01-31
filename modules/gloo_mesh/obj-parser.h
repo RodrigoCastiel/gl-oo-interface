@@ -6,8 +6,7 @@
 
 #pragma once
 
-#include <string>
-#include <vector>
+#include "obj-mesh.h"
 
 namespace gloo
 {
@@ -27,20 +26,9 @@ namespace atomic
 class ObjParser
 {
 public:
-  struct Attribute
-  { 
-    std::vector<float> mData;
-  };
-
-  struct Face
-  {
-    std::vector<std::vector<int>> mIndices;
-    std::vector<int> mVertexFormat;
-  };
-
   // Splits the input string into a list of strings according to a separator string.
   void SplitByString(const std::string & input, const std::string & separator, 
-                            std::vector<std::string> & stringList, bool removeEmptyComponents);
+                     std::vector<std::string> & stringList, bool removeEmptyComponents);
 
   // Filters repeated spaces.
   void PreprocessLine(const std::string & rawLine, std::string & outputLine);
@@ -56,6 +44,9 @@ public:
   // Otherwise, it returns true and stores the data into face.
   bool ParseFace(const std::vector<std::string> & components, Face & face,
                  bool verbose = false);
+
+  // TODO: brief description.
+  bool LoadObj(const std::string & filename, ObjMesh & objMesh, bool verbose = false);
 
   // static void SetOutputText(bool output) { mOutputText = output; }
 };

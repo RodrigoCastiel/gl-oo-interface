@@ -1,13 +1,27 @@
 #include "obj-parser.h"
 
 #include <vector>
+#include <cctype>
+#include <cstdlib>
 #include <fstream>
 #include <iostream>
 #include <algorithm>
-#include <cstdlib>
 
 namespace gloo
 {
+
+void PrintStringList(const std::vector<std::string> & stringList)
+{
+  std::cout << "{";
+  for (size_t i = 0; i < stringList.size(); i++)
+  {
+    std::cout << "\"" << stringList[i] << "\"";
+
+    if (i < stringList.size()-1)
+      std::cout << ", ";
+  }
+  std::cout << "}";
+}
 
 void ObjParser::SplitByString(const std::string & input, const std::string & separator, 
                               std::vector<std::string> & stringList, bool removeEmptyComponents)
@@ -38,7 +52,7 @@ void ObjParser::PreprocessLine(const std::string & rawLine, std::string & filter
   // Remove repeated spaces.
   for (size_t i = 0; i < rawLine.size(); i++)
   {
-    if ( (rawLine[i] != ' ')                         // If not space,
+    if ( (!isspace(rawLine[i]))                      // If not space,
       || ((i > 0) && (rawLine[i] != rawLine[i-1]))   // or a not repeated space
       || (i == 0))                                   // or space at the first position.
     {
@@ -50,7 +64,7 @@ void ObjParser::PreprocessLine(const std::string & rawLine, std::string & filter
 bool ObjParser::ParseAttribute(const std::vector<std::string> & components, Attribute & attrib,
                                bool verbose)
 {
-  attrib.mData.clear();
+  attrib.clear();
 
   for (int i = 1; i < components.size(); i++)
   {
@@ -64,16 +78,23 @@ bool ObjParser::ParseAttribute(const std::vector<std::string> & components, Attr
       return false;
     }
 
-    attrib.mData.push_back(coord);
+    attrib.push_back(coord);
   }
 
-  if ((components[0] == atomic::VT) && (attrib.mData.size()-1 > 3 || attrib.mData.size()-1 < 2)) 
+  if (components.front() == atomic::VT) 
   {
-    if (verbose)
-      std::cerr << "ERROR VT must be 2D or 3D." << std::endl;
-    return false;
+    if (attrib.size() > 3 || attrib.size() < 2)
+    {
+      if (verbose)
+        std::cerr << "ERROR VT must be 2D or 3D." << std::endl;
+      return false;
+    }
+    else
+    {
+      return true;
+    }
   }
-  else if (attrib.mData.size()-1 > 4 || attrib.mData.size() < 3)
+  else if (attrib.size() > 4 || attrib.size() < 3)
   {
     if (verbose)
       std::cerr << "ERROR V, VN must be 3D or 4D." << std::endl;
@@ -88,7 +109,7 @@ bool ObjParser::ParseAttribute(const std::vector<std::string> & components, Attr
 bool ObjParser::ParseFace(const std::vector<std::string> & components, Face & face,
                           bool verbose)
 {
-  face.mIndices.clear();
+  face.clear();
 
   for (int i = 1; i < components.size(); i++)
   {
@@ -104,7 +125,7 @@ bool ObjParser::ParseFace(const std::vector<std::string> & components, Face & fa
       return false;
     }
 
-    face.mIndices.push_back({-1, -1, -1});
+    face.push_back({-1, -1, -1});
 
     // Convert subcomponents into indices.
     for (int j = 0; j < subcomponents.size(); j++)
@@ -121,7 +142,7 @@ bool ObjParser::ParseFace(const std::vector<std::string> & components, Face & fa
       // Index is being provided.
       if (subcomponents[j].size() > 0)
       {
-        face.mIndices[i-1][j] = coord;
+        face[i-1][j] = coord;
       }
     }
   }
@@ -129,5 +150,136 @@ bool ObjParser::ParseFace(const std::vector<std::string> & components, Face & fa
   return true;
 }
 
+bool ObjParser::LoadObj(const std::string & filename, ObjMesh & objMesh, bool verbose)
+{
+  std::ifstream objFile(filename);
+  std::string line;
+  int lineNumber = 1;
+  bool hasBuiltGroup = false;
+
+  if (!objFile.is_open())
+  {
+    if (verbose)
+      std::cerr << "ERROR Could not open .obj file at '" << filename << "'. " << std::endl;
+    return false;
+  }
+
+  while (std::getline(objFile, line))
+  {
+    // Filter line and split into components (also, remove empty components).
+    std::string filteredLine;
+    std::vector<std::string> components;
+
+    ObjParser::PreprocessLine(line, filteredLine);
+    ObjParser::SplitByString(filteredLine, " ", components, true);
+    // std::cout << lineNumber << ": '" << filteredLine << "'\n";
+
+    if (components.empty()) 
+      continue;
+
+    // Check first component type.
+    if (components.front() == atomic::G)  // New group.
+    {
+      std::string groupName;
+
+      for (int i = 1; i < components.size(); i++)
+      {
+        groupName += components[i];
+      }
+
+      objMesh.AddGroup(groupName);
+    }
+    else
+    {
+      if (components.front() == atomic::V)  // New vertex.
+      {
+        Attribute vertex;
+        if (!ObjParser::ParseAttribute(components, vertex, verbose)) 
+        {
+          std::cout << "\t^ at line " << lineNumber << " ('" << filename << "')" << std::endl;
+          std::cout << lineNumber << ": '" << line << "'\n";
+          return false;
+        }
+
+        objMesh.AddVertex(vertex);
+      }
+      else if (components.front() == atomic::VT)  // New texture uv.
+      {
+        Attribute uv;
+        if (!ObjParser::ParseAttribute(components, uv, verbose)) 
+        {
+          std::cout << "\t^ at line " << lineNumber << " ('" << filename << "')" << std::endl;
+          std::cout << lineNumber << ": '" << line << "'\n";
+          return false;
+        }
+
+        objMesh.AddUV(uv);
+      }
+      else if (components.front() == atomic::VN)  // New normal vector.
+      {
+        Attribute normal;
+        if (!ObjParser::ParseAttribute(components, normal, verbose)) 
+        {
+          std::cout << "\t^ at line " << lineNumber << " ('" << filename << "')" << std::endl;
+          std::cout << lineNumber << ": '" << line << "'\n";
+          return false;
+        }
+
+        objMesh.AddNormal(normal);
+      }
+      else if (components.front() == atomic::F)  // New face.
+      {
+        Face face;
+        if (!ObjParser::ParseFace(components, face, verbose))
+        {
+          std::cout << "\t^ at line " << lineNumber << " ('" << filename << "')" << std::endl;
+          std::cout << lineNumber << ": '" << line << "'\n";
+          return false;
+        }
+
+        objMesh.AddFace(face);
+      }
+    
+      else  // Ignore comments and other kinds of line.
+      {
+        // std::cout << "Ignore line " << lineNumber << std::endl;
+      }
+    }
+    
+    lineNumber++;
+  }
+
+  return true;
+}
 
 }  // namespace gloo.
+
+int main()
+{
+  gloo::ObjParser parser;
+  gloo::ObjMesh objMesh;
+
+  parser.LoadObj("B-747.obj", objMesh, true);
+
+  objMesh.LogData();
+
+  // std::string line = "       f  0/2/0   3/0/0  5/4/0  ";
+  // std::string filtered;
+  // std::string separator = " ";
+  // std::vector<std::string> list;
+  // gloo::ObjParser::Attribute attrib;
+  // gloo::ObjParser::Face face;
+
+  // parser.PreprocessLine(line, filtered);
+  // parser.SplitByString(filtered, separator, list, true);
+
+  // std::cout << "Filtered line = '" << filtered << "'" << std::endl;
+  // gloo::PrintStringList(list);
+
+  // parser.ParseAttribute(list, attrib, true);
+  // parser.ParseFace(list, face, true);
+
+  // PrintStringList(list);
+
+  return 0;
+}
