@@ -9,11 +9,21 @@
 #include <vector>
 #include <string>
 
-using Attribute = std::vector<float>;
-using Face = std::vector<std::vector<int>>;
-
 namespace gloo
 {
+
+struct Vec2f
+{
+  float u, v;
+};
+
+struct Vec3f
+{
+  float x, y, z;
+};
+
+// using Attribute = Vec2f;
+using Face = std::vector<std::vector<int>>;
 
 struct ObjGroup
 {
@@ -28,26 +38,24 @@ public:
 
   void Clear();
 
-  void AddVertex(const Attribute & attrib);
-  void AddNormal(const Attribute & attrib);
-  void AddUV(const Attribute & attrib);
+  void AddVertex(const Vec3f & attrib);
+  void AddNormal(const Vec3f & attrib);
+  void AddUV(const Vec2f & attrib);
 
   void AddFace(const Face & face);
   void AddGroup(const std::string & name);
 
   void LogData() const;
 
+  std::vector<Vec3f> & GetVertices() { return mVertices; }
+  std::vector<Vec3f> & GetNormals()  { return mNormals;  }
+  std::vector<Vec2f> & GetUVs()      { return mUVs;      }
+
 private:
   // General data.
-  std::vector<Attribute> mVertices;
-  std::vector<Attribute> mNormals;
-  std::vector<Attribute> mUVs;
-
-  // The following integers specify the size of each attribute.
-  // This information is used when converting into a renderable mesh.
-  int mVertexSize { 4 };
-  int mNormalSize { 4 };
-  int mUVSize { 3 };
+  std::vector<Vec3f> mVertices;
+  std::vector<Vec3f> mNormals;
+  std::vector<Vec2f> mUVs;
 
   // List of groups.
   std::vector<ObjGroup> mGroups;
@@ -74,19 +82,19 @@ void ObjMesh::AddGroup(const std::string & name)
 }
 
 inline
-void ObjMesh::AddVertex(const Attribute & attrib)
+void ObjMesh::AddVertex(const Vec3f & attrib)
 { 
   mVertices.push_back(attrib); 
 }
 
 inline 
-void ObjMesh::AddNormal(const Attribute & attrib)
+void ObjMesh::AddNormal(const Vec3f & attrib)
 { 
   mNormals.push_back(attrib); 
 }
 
 inline
-void ObjMesh::AddUV(const Attribute & attrib)
+void ObjMesh::AddUV(const Vec2f & attrib)
 { 
   mUVs.push_back(attrib); 
 }

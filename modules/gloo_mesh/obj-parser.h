@@ -33,17 +33,16 @@ public:
   // Filters repeated spaces.
   void PreprocessLine(const std::string & rawLine, std::string & outputLine);
 
-  // Reads the line components and converts them into attribute data.
+  // Reads the line and converts them into attribute data.
   // Returns false if the line is invalid. 
   // Otherwise, it returns true and stores the data into attrib.
-  bool ParseAttribute(const std::vector<std::string> & components, Attribute & attrib, 
-                      bool verbose = false);
+  bool ParseVec2f(const char * line, Vec2f & attrib, bool verbose = false);
+  bool ParseVec3f(const char * line, Vec3f & attrib, bool verbose = false);
 
   // Reads the line component and converts them into face data (list of vertices, normal and uv).
   // Returns false if the line is invalid. 
   // Otherwise, it returns true and stores the data into face.
-  bool ParseFace(const std::vector<std::string> & components, Face & face,
-                 bool verbose = false);
+  bool ParseFace(const std::string & lineData, Face & face, bool verbose = false);
 
   // TODO: brief description.
   bool LoadObj(const std::string & filename, ObjMesh & objMesh, bool verbose = false);

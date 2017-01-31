@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <cctype>
+#include <cstdio>
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
@@ -61,43 +62,13 @@ void ObjParser::PreprocessLine(const std::string & rawLine, std::string & filter
   }
 }
 
-bool ObjParser::ParseAttribute(const std::vector<std::string> & components, Attribute & attrib,
-                               bool verbose)
+bool ObjParser::ParseVec2f(const char * line, Vec2f & attrib, 
+                           bool verbose)
 {
-  attrib.clear();
-
-  for (int i = 1; i < components.size(); i++)
-  {
-    // Check if the component is a valid number.
-    char* p;
-    float coord = strtof(components[i].c_str(), &p);
-    if (*p || components[i].size() == 0)
-    {
-      if (verbose)
-        std::cerr << "ERROR Could not read numerical data: '" << components[i] << "' " << std::endl;
-      return false;
-    }
-
-    attrib.push_back(coord);
-  }
-
-  if (components.front() == atomic::VT) 
-  {
-    if (attrib.size() > 3 || attrib.size() < 2)
-    {
-      if (verbose)
-        std::cerr << "ERROR VT must be 2D or 3D." << std::endl;
-      return false;
-    }
-    else
-    {
-      return true;
-    }
-  }
-  else if (attrib.size() > 4 || attrib.size() < 3)
+  if (sscanf(line, "%f %f", &attrib.u, &attrib.v) != 2)
   {
     if (verbose)
-      std::cerr << "ERROR V, VN must be 3D or 4D." << std::endl;
+      std::cerr << "ERROR The attribute must have 2 values. " << std::endl;
     return false;
   }
   else
@@ -106,16 +77,43 @@ bool ObjParser::ParseAttribute(const std::vector<std::string> & components, Attr
   }
 }
 
-bool ObjParser::ParseFace(const std::vector<std::string> & components, Face & face,
-                          bool verbose)
+bool ObjParser::ParseVec3f(const char * line, Vec3f & attrib, 
+                           bool verbose)
 {
-  face.clear();
-
-  for (int i = 1; i < components.size(); i++)
+  
+  if (sscanf(line, "%f %f %f", &attrib.x, &attrib.y, &attrib.z) != 3)
   {
+    if (verbose)
+      std::cerr << "ERROR The attribute must have 3 values. " << std::endl;
+    return false;
+  }
+  else
+  {
+    return true;
+  }
+}
+
+bool ObjParser::ParseFace(const std::string & lineData, Face & face, bool verbose)
+{
+  // Check if there is any data.
+  if (lineData.size() == 0) {
+    if (verbose)
+      std::cerr << "ERROR Empty line." << std::endl;
+    return false;
+  }
+
+  int i0 = 0;
+  int vtxNumber = 0;
+  for (int i = i0; i < lineData.size(); )
+  {
+    // Search for the next space index. "
+    i++;
+    for (; i < lineData.size() && !isspace(lineData[i]); ++i); 
+
     // Read the i-th vertex data into components.
+    std::string vertexInfo = lineData.substr(i0, i-i0);
     std::vector<std::string> subcomponents;
-    ObjParser::SplitByString(components[i], "/", subcomponents, false);
+    ObjParser::SplitByString(vertexInfo, "/", subcomponents, false);
 
     // Check the number of subcomponents.
     if (subcomponents.size() < 1 || subcomponents.size() > 3)
@@ -142,9 +140,19 @@ bool ObjParser::ParseFace(const std::vector<std::string> & components, Face & fa
       // Index is being provided.
       if (subcomponents[j].size() > 0)
       {
-        face[i-1][j] = coord;
+        face[vtxNumber][j] = coord;
       }
     }
+
+    i0 = i+1;
+    vtxNumber++;
+  }
+
+  if (vtxNumber < 3) 
+  {
+     if (verbose)
+      std::cerr << "ERROR A face (polygon) must contain at least 3 vertices." << std::endl;
+    return false;
   }
 
   return true;
@@ -155,7 +163,6 @@ bool ObjParser::LoadObj(const std::string & filename, ObjMesh & objMesh, bool ve
   std::ifstream objFile(filename);
   std::string line;
   int lineNumber = 1;
-  bool hasBuiltGroup = false;
 
   if (!objFile.is_open())
   {
@@ -168,82 +175,91 @@ bool ObjParser::LoadObj(const std::string & filename, ObjMesh & objMesh, bool ve
   {
     // Filter line and split into components (also, remove empty components).
     std::string filteredLine;
-    std::vector<std::string> components;
-
     ObjParser::PreprocessLine(line, filteredLine);
-    ObjParser::SplitByString(filteredLine, " ", components, true);
-    // std::cout << lineNumber << ": '" << filteredLine << "'\n";
 
-    if (components.empty()) 
+    // Find first white space.
+    int ws_pos = 0;
+    for (int i = 0; i < filteredLine.size() && !isspace(filteredLine[i]); i++) 
+      ws_pos++;
+
+    if (filteredLine.size() < 2 || !isspace(filteredLine[ws_pos]))
       continue;
 
+    // Split line into two pieces: the ID and its data.
+    std::string lineID   = filteredLine.substr(0, ws_pos-0);
+    std::string lineData = filteredLine.substr(ws_pos+1);
+
     // Check first component type.
-    if (components.front() == atomic::G)  // New group.
+    if (lineID == atomic::G)  // New group.
     {
-      std::string groupName;
-
-      for (int i = 1; i < components.size(); i++)
-      {
-        groupName += components[i];
-      }
-
-      objMesh.AddGroup(groupName);
+      objMesh.AddGroup(lineData);
     }
     else
     {
-      if (components.front() == atomic::V)  // New vertex.
+      if (lineID == atomic::V)  // New vertex.
       {
-        Attribute vertex;
-        if (!ObjParser::ParseAttribute(components, vertex, verbose)) 
+        Vec3f vertex;
+        if (!ObjParser::ParseVec3f(lineData.c_str(), vertex, verbose)) 
         {
-          std::cout << "\t^ at line " << lineNumber << " ('" << filename << "')" << std::endl;
-          std::cout << lineNumber << ": '" << line << "'\n";
+          if (verbose)
+          {
+            std::cerr << "\t^ at line " << lineNumber << " ('" << filename << "')" << std::endl;
+            std::cerr << lineNumber << ": '" << line << "'\n";  
+          }
           return false;
         }
 
         objMesh.AddVertex(vertex);
       }
-      else if (components.front() == atomic::VT)  // New texture uv.
+      else if (lineID == atomic::VT)  // New texture uv.
       {
-        Attribute uv;
-        if (!ObjParser::ParseAttribute(components, uv, verbose)) 
+        Vec2f uv;
+        if (!ObjParser::ParseVec2f(lineData.c_str(), uv, verbose)) 
         {
-          std::cout << "\t^ at line " << lineNumber << " ('" << filename << "')" << std::endl;
-          std::cout << lineNumber << ": '" << line << "'\n";
+          if (verbose)
+          {
+            std::cerr << "\t^ at line " << lineNumber << " ('" << filename << "')" << std::endl;
+            std::cerr << lineNumber << ": '" << line << "'\n";  
+          }
           return false;
         }
 
         objMesh.AddUV(uv);
       }
-      else if (components.front() == atomic::VN)  // New normal vector.
+      else if (lineID == atomic::VN)  // New normal vector.
       {
-        Attribute normal;
-        if (!ObjParser::ParseAttribute(components, normal, verbose)) 
+        Vec3f normal;
+        if (!ObjParser::ParseVec3f(lineData.c_str(), normal, verbose)) 
         {
-          std::cout << "\t^ at line " << lineNumber << " ('" << filename << "')" << std::endl;
-          std::cout << lineNumber << ": '" << line << "'\n";
+          if (verbose)
+          {
+            std::cerr << "\t^ at line " << lineNumber << " ('" << filename << "')" << std::endl;
+            std::cerr << lineNumber << ": '" << line << "'\n";  
+          }
           return false;
         }
 
         objMesh.AddNormal(normal);
       }
-      else if (components.front() == atomic::F)  // New face.
+      else if (lineID == atomic::F)  // New face.
       {
         Face face;
-        if (!ObjParser::ParseFace(components, face, verbose))
+        if (!ObjParser::ParseFace(lineData, face, verbose))
         {
-          std::cout << "\t^ at line " << lineNumber << " ('" << filename << "')" << std::endl;
-          std::cout << lineNumber << ": '" << line << "'\n";
+          if (verbose)
+          {
+            std::cerr << "\t^ at line " << lineNumber << " ('" << filename << "')" << std::endl;
+            std::cerr << lineNumber << ": '" << line << "'\n";  
+          }
           return false;
         }
 
         objMesh.AddFace(face);
       }
-    
-      else  // Ignore comments and other kinds of line.
-      {
-        // std::cout << "Ignore line " << lineNumber << std::endl;
-      }
+      // else  // Ignore comments and other kinds of line.
+      // {
+
+      // }
     }
     
     lineNumber++;
