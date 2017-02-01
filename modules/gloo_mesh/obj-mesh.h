@@ -78,6 +78,10 @@ public:
   // but not providing its indices.
   MeshGroup<Batch>* ExportToMeshGroup(int groupIndex) const;
 
+
+  // Geometry processing methods.
+  void TessellateQuads();
+
 private:
   // General data.
   std::vector<Vec3f> mVertices;

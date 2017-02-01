@@ -122,7 +122,7 @@ bool MyModel::Init()
 
   // Load textures.
   mTexture = new Texture2d();
-  mTexture->Load("textures/154.jpg");
+  mTexture->Load("textures/sky2.jpg");
 
   mNormalMap = new Texture2d();
   mNormalMap->Load("textures/154_norm.jpg");
@@ -138,6 +138,7 @@ bool MyModel::Init()
   if (parser.LoadObj("objs/B-747.obj", objMesh, true))
   {
     std::cout << "Obj successfully loaded. " << std::endl;
+    objMesh.TessellateQuads();
   }
 
   mImportedMeshGroup = objMesh.ExportToMeshGroup(0); 
@@ -232,17 +233,20 @@ void MyModel::Display()
   // mPhongRenderer->Render(mMeshGroup, M, 1);
   
   // Render dome.
+  mPhongRenderer->DisableLighting();
   M.LoadIdentity();
-  M.Scale(0.7f, 0.7f, 0.7f);
+  M.Scale(100.0f, 100.0f, 100.0f);
   // M.Rotate(blah_angle/10.0f, 0, 1, 0);
   mPhongRenderer->SetMaterial(mDome->GetMaterial());
-  // mPhongRenderer->Render(mDome->GetMeshGroup(), M, 0);
-  
+  mPhongRenderer->Render(mDome->GetMeshGroup(), M, 0);
+  mPhongRenderer->EnableLighting();
+
   // Render imported obj.
   M.LoadIdentity();
+  M.Scale(0.10f, 0.10f, 0.10f);
   mPhongRenderer->DisableColorMap();
   mPhongRenderer->SetMaterial({ glm::vec3(0, 0, 0), 
-                                glm::vec3(.2, .2, .9),
+                                glm::vec3(.9, .9, .9),
                                 glm::vec3(.1, .1, .1)});
   mPhongRenderer->Render(mImportedMeshGroup, M, 0);
   mPhongRenderer->EnableColorMap();

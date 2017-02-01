@@ -131,4 +131,31 @@ MeshGroup<Batch>* ObjMesh::ExportToMeshGroup(int groupIndex) const
   }
 }
 
+void ObjMesh::TessellateQuads()
+{
+  for (auto & group : mGroups)
+  {
+    size_t originalNumFaces = group.mFaces.size();
+
+    for (int i = 0; i < originalNumFaces; i++)
+    {
+      // If the current face is a quad, then tesselate it.
+      if (group.mFaces[i].size() == 4)
+      {
+        // Remove vertex 3 from current face.
+        std::vector<int> vtx3 = group.mFaces[i][3];
+        group.mFaces[i].pop_back();
+
+        //  Create a new triangle with vertices 0, 2, 3.
+        std::vector<int> & vtx2 = group.mFaces[i][2];
+        std::vector<int> & vtx1 = group.mFaces[i][0];
+
+        group.mFaces.push_back({vtx1, vtx2, vtx3});
+      }
+    }
+  }
+}
+
 }  // namespace gloo.
+
+
