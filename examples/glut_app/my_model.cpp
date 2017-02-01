@@ -2,7 +2,8 @@
 
 #include <gloo/transform.h>
 #include <gloo/mouse_event.h>
-#include <gloo/group.h>
+#include <gloo/obj-parser.h>
+#include <gloo/obj-mesh.h>
 
 #include <cstdio>
 #include <iostream>
@@ -48,6 +49,7 @@ MyModel::~MyModel()
 
   delete mDebugRenderer;
   delete mPhongRenderer;
+  delete mImportedMeshGroup;
 
   delete mAxis;
   delete mGrid;
@@ -67,8 +69,8 @@ bool MyModel::Init()
   glEnable(GL_TEXTURE_2D);
   glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
   mDebugRenderer = new DebugRenderer();
-  mPhongRenderer = new PhongRenderer("../../shaders/normal_mapping_phong/vertex_shader.glsl",
-                                     "../../shaders/normal_mapping_phong/fragment_shader.glsl");
+  mPhongRenderer = new PhongRenderer("../../shaders/phong/vertex_shader.glsl",
+                                     "../../shaders/phong/fragment_shader.glsl");
 
   if (!mDebugRenderer->Load())
   {
@@ -83,10 +85,6 @@ bool MyModel::Init()
     delete mPhongRenderer;
     return false;
   }
-
-  mPhongRenderer->SetNumLightSources(2);
-  mPhongRenderer->DisableLightSource(0);
-  mPhongRenderer->EnableLightSource(1);
 
   mCamera = new Camera();
   mCamera->SetPosition(0, 0, 3.0f);
@@ -116,9 +114,13 @@ bool MyModel::Init()
                                 {normalAttribLocPhong, true}, 
                                 {textureAttribLocPhong, true},
                                 {tangentAttribLocPhong, true}});
-
+  mMeshGroup->AddRenderingPass({{posAttribLocPhong, true}, 
+                                {normalAttribLocPhong, true}, 
+                                {textureAttribLocPhong, true},
+                                {tangentAttribLocPhong, false}});
   mMeshGroup->Load({squareVertices, squareNormals, squareUV, squareTangents}, nullptr);
 
+  // Load textures.
   mTexture = new Texture2d();
   mTexture->Load("textures/154.jpg");
 
@@ -131,6 +133,44 @@ bool MyModel::Init()
   mPhongRenderer->EnableLighting();
 
 
+  gloo::ObjParser parser;
+  gloo::ObjMesh objMesh;
+  if (parser.LoadObj("objs/B-747.obj", objMesh, true))
+  {
+    std::cout << "Obj successfully loaded. " << std::endl;
+  }
+
+  mImportedMeshGroup = objMesh.ExportToMeshGroup(0); 
+  if (mImportedMeshGroup)
+  { 
+    auto vertexAttribList = mImportedMeshGroup->GetVertexAttribList();
+
+    if (vertexAttribList.size() == 3)
+    {
+      mImportedMeshGroup->AddRenderingPass({{posAttribLocPhong, true}, 
+                                            {normalAttribLocPhong, true}, 
+                                            {textureAttribLocPhong, true}});  
+    }
+    else if (vertexAttribList.size() == 2)
+    {
+      if (vertexAttribList[1] == 2)
+      {
+        mImportedMeshGroup->AddRenderingPass({{posAttribLocPhong, true},  
+                                             {textureAttribLocPhong, true}});  
+      }
+      else
+      {
+        mImportedMeshGroup->AddRenderingPass({{posAttribLocPhong, true},  
+                                              {normalAttribLocPhong, true}});  
+      }
+    }  
+  }
+  else
+  {
+    std::cout << "Couldn't initialize 'MyModel::mImportedMeshGroup*' ..." << std::endl;
+    return false;
+  }
+
   return true;
 }
 
@@ -141,62 +181,80 @@ void MyModel::Idle()
 
 void MyModel::Display()
 {
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
   static float blah_angle = 0.0;
   blah_angle += 0.01;
 
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
   mCamera->SetOnRendering();
+  mPhongRenderer->Bind();
+  mPhongRenderer->SetCamera(mCamera);
 
   gloo::Transform M;
   M.LoadIdentity();
 
-  mPhongRenderer->Bind();
-  mPhongRenderer->SetCamera(mCamera);
+  mPhongRenderer->SetNumLightSources(3);
+  mPhongRenderer->EnableLightSource(0);
+  mPhongRenderer->EnableLightSource(1);
+  mPhongRenderer->EnableLightSource(2);
 
-  LightSource lightSource = { glm::vec3(0, 10.0f, 0),  // Pos.
-                              glm::vec3(0,   -1,  0),  // Dir.
-                              glm::vec3(0.9, 0.9, 1),  // Ld.
-                              glm::vec3(0.6, 0.6, 0.6),  // Ls.
+  LightSource lightSource1 = { glm::vec3(3*std::cos(blah_angle), 3.0f, 3*std::sin(blah_angle)),  // Pos.
+                               glm::vec3(0,   -1,  0),     // Dir.
+                               glm::vec3(0.7, 0.7, 0.7),     // Ld.
+                               glm::vec3(0.2, 0.2, 0.2),   // Ls.
+                               2.0f};  // Alpha.
+  LightSource lightSource2 = { glm::vec3(3*std::cos(blah_angle + 3.1415*0.66), 3.0f, 3*std::sin(blah_angle + 3.1415*0.66)),  // Pos.
+                               glm::vec3(0,   -1,  0),    // Dir.
+                               glm::vec3(0.7, 0.7, 0.7),    // Ld.
+                               glm::vec3(0.2, 0.2, 0.2),  // Ls.
                               2.0f};  // Alpha.
 
-  mPhongRenderer->SetLightSourceInCameraCoordinates(lightSource, mCamera, 0);
-
-  LightSource lightSource2 = { glm::vec3(0.5f*std::cos(blah_angle*3.0f), 2.0f, 3*std::sin(blah_angle*1.4f + 2.0f)),  // Pos.
+  LightSource lightSource3 = { glm::vec3(3*std::cos(blah_angle + 3.1415*1.33), 3.0f, 3*std::sin(blah_angle + 3.1415*1.33)),  // Pos.
                                glm::vec3(0,   -1,  0),  // Dir.
-                               glm::vec3(1.0,  1.0, 1),  // Ld.
-                               glm::vec3(1.0, 1.0, 1),  // Ls.
+                               glm::vec3(0.7, 0.7, 0.7),  // Ld.
+                               glm::vec3(.5, .5, .5),  // Ls.
                                5.0f};  // Alpha.
 
+  mPhongRenderer->SetLightSourceInCameraCoordinates(lightSource1, mCamera, 0);
   mPhongRenderer->SetLightSourceInCameraCoordinates(lightSource2, mCamera, 1);
+  mPhongRenderer->SetLightSourceInCameraCoordinates(lightSource3, mCamera, 2);
+
+
+  // Render rectangle with normal mapping.
   mPhongRenderer->SetMaterial({ glm::vec3(0, 0, 0), 
-                                glm::vec3(.9, .9, .9),
+                                glm::vec3(.4, .4, .4),
                                 glm::vec3(.05, .05, .05)});
 
   mTexture->Bind(GL_TEXTURE0);
   mNormalMap->Bind(GL_TEXTURE1);
   M.LoadIdentity();
   // M.Rotate(-0.79*cos(blah_angle), 1, 0, 1);
-  mPhongRenderer->Render(mMeshGroup, M, 1);
+  // mPhongRenderer->Render(mMeshGroup, M, 1);
+  
+  // Render dome.
   M.LoadIdentity();
-
   M.Scale(0.7f, 0.7f, 0.7f);
   // M.Rotate(blah_angle/10.0f, 0, 1, 0);
   mPhongRenderer->SetMaterial(mDome->GetMaterial());
   // mPhongRenderer->Render(mDome->GetMeshGroup(), M, 0);
+  
+  // Render imported obj.
   M.LoadIdentity();
+  mPhongRenderer->DisableColorMap();
+  mPhongRenderer->SetMaterial({ glm::vec3(0, 0, 0), 
+                                glm::vec3(.2, .2, .9),
+                                glm::vec3(.1, .1, .1)});
+  mPhongRenderer->Render(mImportedMeshGroup, M, 0);
+  mPhongRenderer->EnableColorMap();
+
 
   if (mRendererNum == 1) 
   {
+    M.LoadIdentity();
+    M.Scale(3.0f, 3.0f, 3.0f);
     mDebugRenderer->Bind();
     mDebugRenderer->Render(mGrid->GetMeshGroup(), M, mCamera);
     mDebugRenderer->Render(mAxis->GetMeshGroup(), M, mCamera);
-    // mDebugRenderer->Render(mWireframeSphere->GetMeshGroup(), M, mCamera);
-
-    // M.Rotate(-0.79*blah_angle, 0, 1, 0);
-    // M.Translate(-1.2f, 0.0f, 0.0f);
-    // M.Rotate(blah_angle, 0, 0, 1);
-    // M.Scale(0.25f, 0.25f, 0.25f);
     // mDebugRenderer->Render(mWireframeSphere->GetMeshGroup(), M, mCamera);
   }
 

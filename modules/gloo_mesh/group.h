@@ -113,6 +113,7 @@ public:
 
   // Specifies which data/properties the vertices contain.
   void SetVertexAttribList(std::initializer_list<GLuint> vertexAttribList);
+  void SetVertexAttribList(const std::vector<GLuint> & vertexAttribList);
 
   // Adds a different way of rendering the object - each one might use different 
   // attributes of the vertex. The active attribute list specifies which attributes 
@@ -137,6 +138,7 @@ public:
   void ClearBuffers();
 
   // Getters.
+  std::vector<GLuint> GetVertexAttribList() const { return mVertexAttributeList; }
   GLuint GetNumVertices() const { return mNumVertices; }
   GLuint GetNumElements() const { return mNumElements; }
   GLuint GetVertexSize() const  { return mVertexSize;  }
@@ -232,6 +234,24 @@ void MeshGroup<F>::SetVertexAttribList(std::initializer_list<GLuint> vertexAttri
 }
 
 template <StorageFormat F>
+void MeshGroup<F>::SetVertexAttribList(const std::vector<GLuint> & vertexAttribList)
+{
+  mVertexAttributeList = vertexAttribList;
+
+  mVertexSize = 0;
+  mNumAttributes = 0;
+  for (GLuint attribSize : mVertexAttributeList) 
+  {
+    mVertexSize += attribSize;
+    mNumAttributes++;
+  }
+
+  // Generate geometry buffers.
+  glGenBuffers(1, &mVbo);       // Vertex buffer object.
+  glGenBuffers(1, &mEab);       // Element array buffer.
+}
+
+template <StorageFormat F>
 int MeshGroup<F>::AddRenderingPass(const std::vector<std::pair<GLint, bool>> & attribList)
 {
   assert(attribList.size() == mNumAttributes);
@@ -307,6 +327,8 @@ bool MeshGroup<F>::Load(const GLfloat* buffer, const GLuint* indices)
 
     MeshGroup<F>::AllocateBuffers(buffer, elementsBuffer.data());
   }
+
+  return true;
 }
 
 template <StorageFormat F>
@@ -314,6 +336,7 @@ bool MeshGroup<F>::Update(const GLfloat* buffer)
 {
   glBindBuffer(GL_ARRAY_BUFFER, mVbo);
   glBufferSubData(GL_ARRAY_BUFFER, 0, mVertexSize * mNumVertices * sizeof(GLfloat), buffer);
+  return true;
 }
 
 // ============================================================================================= //

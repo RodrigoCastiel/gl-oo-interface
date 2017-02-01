@@ -41,6 +41,7 @@ uniform vec3 La = vec3(0.1);                // Ambient light component.
 uniform LightSource light[max_num_lights];  // Array of light sources.
 
 // === Texture === //
+uniform int use_color_map = 1;
 uniform sampler2D color_map;
 uniform sampler2D normal_map;
 
@@ -51,14 +52,19 @@ uniform Material material;
 
 void main()
 {
-  if (lighting == 0)  // off.
+  vec3 Kd = material.Kd;
+  if (use_color_map == 1)
   {
-    pixel_color = texture(color_map, f_uv);
+    Kd = texture(color_map, f_uv).xyz;
   }
-  else  // on.
+
+  if (lighting == 0)  // lighting off.
+  {
+    pixel_color = vec4(Kd, 1.0);
+  }
+  else  // lighting on.
   {
     vec3 Ka = material.Ka;
-    vec3 Kd = texture(color_map, f_uv).xyz;
     vec3 Ks = material.Ks;
 
     // Fragment data and light sources are in camera coordinates.

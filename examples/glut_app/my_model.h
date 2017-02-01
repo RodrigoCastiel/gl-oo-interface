@@ -40,6 +40,7 @@ private:
   MeshGroup<Batch>* mMeshGroup { nullptr };
   Texture2d* mTexture   { nullptr };
   Texture2d* mNormalMap { nullptr };
+  MeshGroup<Batch>* mImportedMeshGroup { nullptr };
 
   Polygon* mPolygon;
   AxisMesh* mAxis;

@@ -137,10 +137,10 @@ bool ObjParser::ParseFace(const std::string & lineData, Face & face, bool verbos
         return false;
       }
 
-      // Index is being provided.
+      // Index is provided.
       if (subcomponents[j].size() > 0)
       {
-        face[vtxNumber][j] = coord;
+        face[vtxNumber][j] = coord-1;
       }
     }
 
@@ -256,10 +256,7 @@ bool ObjParser::LoadObj(const std::string & filename, ObjMesh & objMesh, bool ve
 
         objMesh.AddFace(face);
       }
-      // else  // Ignore comments and other kinds of line.
-      // {
-
-      // }
+      // Ignore comments and other kinds of line.
     }
     
     lineNumber++;
@@ -270,32 +267,32 @@ bool ObjParser::LoadObj(const std::string & filename, ObjMesh & objMesh, bool ve
 
 }  // namespace gloo.
 
-int main()
-{
-  gloo::ObjParser parser;
-  gloo::ObjMesh objMesh;
+// int main()
+// {
+//   gloo::ObjParser parser;
+//   gloo::ObjMesh objMesh;
 
-  parser.LoadObj("B-747.obj", objMesh, true);
+//   parser.LoadObj("weirdo.obj", objMesh, true);
 
-  objMesh.LogData();
+//   objMesh.LogData();
 
-  // std::string line = "       f  0/2/0   3/0/0  5/4/0  ";
-  // std::string filtered;
-  // std::string separator = " ";
-  // std::vector<std::string> list;
-  // gloo::ObjParser::Attribute attrib;
-  // gloo::ObjParser::Face face;
+//   // std::string line = "       f  0/2/0   3/0/0  5/4/0  ";
+//   // std::string filtered;
+//   // std::string separator = " ";
+//   // std::vector<std::string> list;
+//   // gloo::ObjParser::Attribute attrib;
+//   // gloo::ObjParser::Face face;
 
-  // parser.PreprocessLine(line, filtered);
-  // parser.SplitByString(filtered, separator, list, true);
+//   // parser.PreprocessLine(line, filtered);
+//   // parser.SplitByString(filtered, separator, list, true);
 
-  // std::cout << "Filtered line = '" << filtered << "'" << std::endl;
-  // gloo::PrintStringList(list);
+//   // std::cout << "Filtered line = '" << filtered << "'" << std::endl;
+//   // gloo::PrintStringList(list);
 
-  // parser.ParseAttribute(list, attrib, true);
-  // parser.ParseFace(list, face, true);
+//   // parser.ParseAttribute(list, attrib, true);
+//   // parser.ParseFace(list, face, true);
 
-  // PrintStringList(list);
+//   // PrintStringList(list);
 
-  return 0;
-}
+//   return 0;
+// }

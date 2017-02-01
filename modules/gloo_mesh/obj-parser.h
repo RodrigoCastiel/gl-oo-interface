@@ -46,8 +46,6 @@ public:
 
   // TODO: brief description.
   bool LoadObj(const std::string & filename, ObjMesh & objMesh, bool verbose = false);
-
-  // static void SetOutputText(bool output) { mOutputText = output; }
 };
 
 }  // namespace gloo.

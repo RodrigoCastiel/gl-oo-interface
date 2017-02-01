@@ -6,8 +6,12 @@
 
 // ObjMesh is a high-level structure to store mesh data and its topology.
 
+#pragma once
+
 #include <vector>
 #include <string>
+
+#include "group.h"
 
 namespace gloo
 {
@@ -50,6 +54,29 @@ public:
   std::vector<Vec3f> & GetVertices() { return mVertices; }
   std::vector<Vec3f> & GetNormals()  { return mNormals;  }
   std::vector<Vec2f> & GetUVs()      { return mUVs;      }
+
+  // Getter methods.
+  inline size_t GetNumVertices() const { return mVertices.size(); }
+  inline size_t GetNumNormals()  const { return mNormals.size();  }
+  inline size_t GetNumUVs()      const { return mUVs.size();      }
+
+  inline size_t GetNumGroups() const { return mGroups.size(); }
+  inline size_t GetNumFacesOnGroup(int index) const { return mGroups[index].mFaces.size(); }
+  size_t GetNumFaces() const;
+
+  // Builds a renderable mesh group from the topology data of ObjMesh.
+  // If an invalid groupIndex is passed, returns nullptr.
+  //
+  // It assumes that ObjMesh is triangulated.
+  // The returned MeshGroup will contain all the geometry for rendering, 
+  // but no texture or material info.
+  //
+  // Automatically sets the internal list of vertex attributes to {3, 3, 2} -> {pos, normal, uv}.
+  // You must add manually a rendering pass.
+  //
+  // Possible source of segfault: providing texture coordinates or normals 
+  // but not providing its indices.
+  MeshGroup<Batch>* ExportToMeshGroup(int groupIndex) const;
 
 private:
   // General data.

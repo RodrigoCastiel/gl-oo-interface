@@ -47,6 +47,8 @@ bool MeshGroup<Interleave>::Load(const std::vector<GLfloat*> & bufferList, const
 
     MeshGroup<Interleave>::AllocateBuffers(vertexBuffer.data(), elementsBuffer.data());
   }
+
+  return true;
 }
 
 template <>
@@ -98,6 +100,8 @@ bool MeshGroup<Interleave>::Update(const std::vector<GLfloat*> & bufferList)
 
     attrib_offset += size;
   }
+
+  return true;
 }
 
 // ============================================================================================= //
@@ -123,6 +127,8 @@ bool MeshGroup<Batch>::Load(const std::vector<GLfloat*> & bufferList, const GLui
   }
 
   MeshGroup<Batch>::Update(bufferList);
+
+  return true;
 }
 
 template <>
@@ -146,6 +152,8 @@ bool MeshGroup<Batch>::Update(const std::vector<GLfloat*> & bufferList)
 
     offset += size*mNumVertices * sizeof(GLfloat);
   }
+
+  return true;
 }
 
 template <>

@@ -180,6 +180,8 @@ public:
   void SetMaterial(const Material & material) const;
 
   // === Texture configuration methods ===
+  void EnableColorMap() const;
+  void DisableColorMap() const;
 
   // Use the following methods to link a texture unit to a sampler on shader.
   // samplerName is your sampler uniform name on the shader.
@@ -209,8 +211,9 @@ private:
   GLint mLightSwitchUniformArray[kMaxNumberLights];
   LightUniformPack mLightUniformArray[kMaxNumberLights];
 
-  // Material.
+  // Material and Texture.
   MaterialUniformPack mMaterialUniform;  // Set of material uniforms.
+  GLint mUseColorMapLoc { -1 };
 
   // Constant data (passed to constructor).
   const std::string mVertexShaderPath;
@@ -294,6 +297,18 @@ inline
 void PhongRenderer::DisableLighting() const
 {
   glUniform1i(mLightingLoc, 0);
+}
+
+inline
+void PhongRenderer::EnableColorMap() const
+{
+  glUniform1i(mUseColorMapLoc, 1);
+}
+
+inline
+void PhongRenderer::DisableColorMap() const
+{
+  glUniform1i(mUseColorMapLoc, 0);
 }
 
 }  // namespace gloo.
