@@ -62,10 +62,10 @@ void ObjParser::PreprocessLine(const std::string & rawLine, std::string & filter
   }
 }
 
-bool ObjParser::ParseVec2f(const char * line, Vec2f & attrib, 
+bool ObjParser::ParseVec2f(const char * line, glm::vec2 & attrib, 
                            bool verbose)
 {
-  if (sscanf(line, "%f %f", &attrib.u, &attrib.v) != 2)
+  if (sscanf(line, "%f %f", &attrib[0], &attrib[1]) != 2)
   {
     if (verbose)
       std::cerr << "ERROR The attribute must have 2 values. " << std::endl;
@@ -77,11 +77,11 @@ bool ObjParser::ParseVec2f(const char * line, Vec2f & attrib,
   }
 }
 
-bool ObjParser::ParseVec3f(const char * line, Vec3f & attrib, 
+bool ObjParser::ParseVec3f(const char * line, glm::vec3 & attrib, 
                            bool verbose)
 {
   
-  if (sscanf(line, "%f %f %f", &attrib.x, &attrib.y, &attrib.z) != 3)
+  if (sscanf(line, "%f %f %f", &attrib[0], &attrib[1], &attrib[2]) != 3)
   {
     if (verbose)
       std::cerr << "ERROR The attribute must have 3 values. " << std::endl;
@@ -123,7 +123,7 @@ bool ObjParser::ParseFace(const std::string & lineData, Face & face, bool verbos
       return false;
     }
 
-    face.push_back({-1, -1, -1});
+    face.VertexList().push_back({-1, -1, -1});
 
     // Convert subcomponents into indices.
     for (int j = 0; j < subcomponents.size(); j++)
@@ -198,7 +198,7 @@ bool ObjParser::LoadObj(const std::string & filename, ObjMesh & objMesh, bool ve
     {
       if (lineID == atomic::V)  // New vertex.
       {
-        Vec3f vertex;
+        glm::vec3 vertex;
         if (!ObjParser::ParseVec3f(lineData.c_str(), vertex, verbose)) 
         {
           if (verbose)
@@ -213,7 +213,7 @@ bool ObjParser::LoadObj(const std::string & filename, ObjMesh & objMesh, bool ve
       }
       else if (lineID == atomic::VT)  // New texture uv.
       {
-        Vec2f uv;
+        glm::vec2 uv;
         if (!ObjParser::ParseVec2f(lineData.c_str(), uv, verbose)) 
         {
           if (verbose)
@@ -228,7 +228,7 @@ bool ObjParser::LoadObj(const std::string & filename, ObjMesh & objMesh, bool ve
       }
       else if (lineID == atomic::VN)  // New normal vector.
       {
-        Vec3f normal;
+        glm::vec3 normal;
         if (!ObjParser::ParseVec3f(lineData.c_str(), normal, verbose)) 
         {
           if (verbose)

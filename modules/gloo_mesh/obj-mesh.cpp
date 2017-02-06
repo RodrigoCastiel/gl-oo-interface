@@ -41,7 +41,7 @@ void ObjMesh::LogData() const
   }
 }
 
-MeshGroup<Batch>* ObjMesh::ExportToMeshGroup(int groupIndex) const
+MeshGroup<Batch>* ObjMesh::ExportToMeshGroup(int groupIndex, bool smoothLighting) const
 {  
   if ((groupIndex < 0) && (groupIndex > mGroups.size())) 
   {
@@ -86,15 +86,20 @@ MeshGroup<Batch>* ObjMesh::ExportToMeshGroup(int groupIndex) const
 
       if (hasNormals)
       {
-        groupNormals.push_back(mNormals[nor_index].x);
-        groupNormals.push_back(mNormals[nor_index].y);
-        groupNormals.push_back(mNormals[nor_index].z);  
-      }
+        // TODO: change normals according to flag smoothLighting.
+        glm::vec3 n = objGroup.mFaces[i].GetNormal();
+        groupNormals.push_back(n.x);
+        groupNormals.push_back(n.y);
+        groupNormals.push_back(n.z);  
 
+        // groupNormals.push_back(mNormals[nor_index].x);
+        // groupNormals.push_back(mNormals[nor_index].y);
+        // groupNormals.push_back(mNormals[nor_index].z);  
+      }
       if (hasUVs)
       {
-        groupUVs.push_back(mUVs[uv_index].u);
-        groupUVs.push_back(mUVs[uv_index].v);
+        groupUVs.push_back(mUVs[uv_index].x);
+        groupUVs.push_back(mUVs[uv_index].y);
       }
     }
   }
@@ -131,20 +136,19 @@ MeshGroup<Batch>* ObjMesh::ExportToMeshGroup(int groupIndex) const
   }
 }
 
-void ObjMesh::TessellateQuads()
+void ObjMesh::TriangulateQuads()
 {
   for (auto & group : mGroups)
   {
     size_t originalNumFaces = group.mFaces.size();
-
     for (int i = 0; i < originalNumFaces; i++)
     {
       // If the current face is a quad, then tesselate it.
-      if (group.mFaces[i].size() == 4)
+      if (group.mFaces[i].VertexList().size() == 4)
       {
         // Remove vertex 3 from current face.
         std::vector<int> vtx3 = group.mFaces[i][3];
-        group.mFaces[i].pop_back();
+        group.mFaces[i].VertexList().pop_back();
 
         //  Create a new triangle with vertices 0, 2, 3.
         std::vector<int> & vtx2 = group.mFaces[i][2];
@@ -156,6 +160,46 @@ void ObjMesh::TessellateQuads()
   }
 }
 
+void ObjMesh::ComputeVertexNormals()
+{
+  // // For each vtx, stores a list of faces that share it.
+  // std::vector<std::vector<Face*>> mVertexFaces(mVertices.size());
+
+  // // Build up the adjancy list (between vertices and faces).
+  // for (auto & group : mGroups)
+  // {
+  //   size_t numFaces = group.mFaces.size();
+  //   for (int i = 0; i < numFaces; i++)
+  //   {
+  //     if ()
+  //     {
+
+  //     }
+  //   }
+  // }
+}
+
+void ObjMesh::ComputeFaceNormals()
+{
+  for (auto & group : mGroups)
+  {
+    for (auto & face : group.mFaces)
+    {
+      if (face.VertexList().size() == 3)
+      {
+        glm::vec3 & v0 = mVertices[face[0][0]];
+        glm::vec3 & v1 = mVertices[face[1][0]];
+        glm::vec3 & v2 = mVertices[face[2][0]];
+        glm::vec3 n = glm::normalize(glm::cross(v1-v0, v2-v0));
+        face.SetNormal(n);
+      }
+    }
+  }
+}
+
 }  // namespace gloo.
+
+
+
 
 

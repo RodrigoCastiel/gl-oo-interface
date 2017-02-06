@@ -122,10 +122,10 @@ bool MyModel::Init()
 
   // Load textures.
   mTexture = new Texture2d();
-  mTexture->Load("textures/sky2.jpg");
+  mTexture->Load("textures/outer_space.jpg");
 
   mNormalMap = new Texture2d();
-  mNormalMap->Load("textures/154_norm.jpg");
+  mNormalMap->Load("textures/earth2.jpg");
 
   mPhongRenderer->SetTextureUnit("color_map",  0);
   mPhongRenderer->SetTextureUnit("normal_map", 1);
@@ -135,10 +135,11 @@ bool MyModel::Init()
 
   gloo::ObjParser parser;
   gloo::ObjMesh objMesh;
-  if (parser.LoadObj("objs/B-747.obj", objMesh, true))
+  if (parser.LoadObj("objs/asianDragon.obj", objMesh, true))
   {
     std::cout << "Obj successfully loaded. " << std::endl;
-    objMesh.TessellateQuads();
+    objMesh.TriangulateQuads();
+    objMesh.ComputeFaceNormals();
   }
 
   mImportedMeshGroup = objMesh.ExportToMeshGroup(0); 
@@ -226,28 +227,38 @@ void MyModel::Display()
                                 glm::vec3(.4, .4, .4),
                                 glm::vec3(.05, .05, .05)});
 
-  mTexture->Bind(GL_TEXTURE0);
-  mNormalMap->Bind(GL_TEXTURE1);
+  
+  // mNormalMap->Bind(GL_TEXTURE1);
   M.LoadIdentity();
   // M.Rotate(-0.79*cos(blah_angle), 1, 0, 1);
   // mPhongRenderer->Render(mMeshGroup, M, 1);
   
   // Render dome.
+  mTexture->Bind(GL_TEXTURE0);
   mPhongRenderer->DisableLighting();
   M.LoadIdentity();
   M.Scale(100.0f, 100.0f, 100.0f);
-  // M.Rotate(blah_angle/10.0f, 0, 1, 0);
+  M.Rotate(blah_angle/100.0f, 0, 1, 0);
+  M.Rotate(-blah_angle/130.0f, 0, 0, 1);
   mPhongRenderer->SetMaterial(mDome->GetMaterial());
+  mPhongRenderer->Render(mDome->GetMeshGroup(), M, 0);
+
+  mNormalMap->Bind(GL_TEXTURE0);
+  M.LoadIdentity();
+  M.Translate(0.0, -7.0f, 0.0f);
+  M.Rotate(27*3.141592/180.0f, 0, 0, 1);
+  M.Rotate(blah_angle/15.0f, 0, 1, 0);
+  M.Scale(5.0f, 5.0f, 5.0f);
   mPhongRenderer->Render(mDome->GetMeshGroup(), M, 0);
   mPhongRenderer->EnableLighting();
 
   // Render imported obj.
   M.LoadIdentity();
-  M.Scale(0.10f, 0.10f, 0.10f);
+  // M.Scale(0.10f, 0.10f, 0.10f);
   mPhongRenderer->DisableColorMap();
   mPhongRenderer->SetMaterial({ glm::vec3(0, 0, 0), 
-                                glm::vec3(.9, .9, .9),
-                                glm::vec3(.1, .1, .1)});
+                                glm::vec3(.9, .7, .2),
+                                glm::vec3(.3, .3, .3)});
   mPhongRenderer->Render(mImportedMeshGroup, M, 0);
   mPhongRenderer->EnableColorMap();
 
