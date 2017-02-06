@@ -266,33 +266,3 @@ bool ObjParser::LoadObj(const std::string & filename, ObjMesh & objMesh, bool ve
 }
 
 }  // namespace gloo.
-
-// int main()
-// {
-//   gloo::ObjParser parser;
-//   gloo::ObjMesh objMesh;
-
-//   parser.LoadObj("weirdo.obj", objMesh, true);
-
-//   objMesh.LogData();
-
-//   // std::string line = "       f  0/2/0   3/0/0  5/4/0  ";
-//   // std::string filtered;
-//   // std::string separator = " ";
-//   // std::vector<std::string> list;
-//   // gloo::ObjParser::Attribute attrib;
-//   // gloo::ObjParser::Face face;
-
-//   // parser.PreprocessLine(line, filtered);
-//   // parser.SplitByString(filtered, separator, list, true);
-
-//   // std::cout << "Filtered line = '" << filtered << "'" << std::endl;
-//   // gloo::PrintStringList(list);
-
-//   // parser.ParseAttribute(list, attrib, true);
-//   // parser.ParseFace(list, face, true);
-
-//   // PrintStringList(list);
-
-//   return 0;
-// }

@@ -94,7 +94,7 @@ public:
   //
   // Possible source of segfault: providing texture coordinates or normals 
   // but not providing its indices.
-  MeshGroup<Batch>* ExportToMeshGroup(int groupIndex, bool smoothLighting=true) const;
+  MeshGroup<Batch>* ExportToMeshGroup(int groupIndex, bool smoothShading=true);
 
   // Geometry processing methods.
   
@@ -103,10 +103,10 @@ public:
 
   // Calculates the normal vector for each vertex on the surface.
   // The mesh must be triangulated.
-  void ComputeVertexNormals();
+  void ComputeVertexNormals(bool normalize=true);
 
   // Calculates the normal vector for each face. It considers the faces to be triangular.
-  void ComputeFaceNormals();
+  void ComputeFaceNormals(bool normalize=true);
 
 private:
   // General data.

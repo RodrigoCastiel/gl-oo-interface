@@ -139,10 +139,9 @@ bool MyModel::Init()
   {
     std::cout << "Obj successfully loaded. " << std::endl;
     objMesh.TriangulateQuads();
-    objMesh.ComputeFaceNormals();
   }
 
-  mImportedMeshGroup = objMesh.ExportToMeshGroup(0); 
+  mImportedMeshGroup = objMesh.ExportToMeshGroup(0, false); 
   if (mImportedMeshGroup)
   { 
     auto vertexAttribList = mImportedMeshGroup->GetVertexAttribList();
@@ -165,7 +164,7 @@ bool MyModel::Init()
         mImportedMeshGroup->AddRenderingPass({{posAttribLocPhong, true},  
                                               {normalAttribLocPhong, true}});  
       }
-    }  
+    }
   }
   else
   {
